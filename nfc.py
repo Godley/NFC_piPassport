@@ -9,7 +9,7 @@ import json
 
 class NFC:
 	def __init__(self,data_file,pi_file):
-		self.ach_api='http://pipassport.azurewebsites.net/api/Achievements'
+		self.achievement_api='http://pipassport.azurewebsites.net/api/Achievements'
 		self.people_api='http://pipassport.azurewebsites.net/api/People'
 		self.link_api='http://pipassport.azurewebistes.net/api/Links'
 		self.data=data_file
@@ -49,39 +49,65 @@ class NFC:
 			answers=[]
 			for a in atag:
 				answers.append(a.childNodes[0].data)
+			print question, answers
 			achievements[id]={"question":question,"answers":answers}
 		return achievements
 		
 	def SavePi(self):
 		dom=self.Load(self.pi,"piSyst")
+		print dom
 		top=dom.documentElement
 		if(len(dom.getElementsByTagName("pi"))==0):
+			desc=raw_input("Enter description for this pi's location:")
 			pi=dom.createElement("pi")
-			pi.setAttribute("ID","0")
+			req=requests.get(self.achievement_api)
+			try:
+				j=req.json()
+				id=int(j[-1]["ID"])+1
+			except:
+				id=0
+			pi.setAttribute("ID",str(id))
 			top.appendChild(pi)
+			headers={'content-type':'application/json'}
+			post=requests.post(self.achievement_api,json.dumps({'ID':id,'Description':desc}))
+			
 		else:
 			pitag=dom.getElementsByTagName("pi")[0]
 			for id,a in self.achievements.iteritems():
+				
+				print a["question"]
 				if a["question"]!=None:
 					a=dom.createElement("achievement")
 					a.setAttribute("ID",id)
 					q=dom.createElement("question")
-					text=dom.createTextNode(a["question"])
+					text=dom.createTextNode(str(a["question"]))
 					q.appendChild(text)
 					a.appendChild(q)
 					for answer in a["answers"]:
 						ans=dom.createElement("answer")
-						txt=dom.createTextNode(txt)
+						txt=dom.createTextNode(str(answer))
 						ans.appendChild(txt)
 						a.appendChild(ans)
 					pitag.appendChild(a)
 				data={'ID':id,'Description':a['description']}
 				header={'content-type':'application/json'}
-				req=requests.post(self.achievements_api,json.dump(data),header}
+				getreq=requests.get(os.path.join(self.achievements_api,id))
+				if len(getreq.json)>0:
+					req=requests.put(os.path.join(self.achievements_api,id),data=json.dumps(data),headers=header)
+				else:
+					req=requests.post(self.achievements_api,data=json.dumps(data),headers=header)
+			delete_r=requests.get(self.achievements_api)
+			try:
+				j=delete_r.json()
+				for item in j:
+					if item["ID"] not in self.achievements.keys():
+						delreq=requests.delete(os.path.join(self.achievements_api,item["ID"]))
+			except:
+				achfound=None
 		file=open(self.pi,'w')
 		dom.writexml(file)
 	def AddAchievement(self,question,answers,description):
-		req=requests.get(self.achievements_api)
+		req=requests.get(self.achievement_api)
 		try:
 			ach=req.json()
 			id=len(ach)-1
