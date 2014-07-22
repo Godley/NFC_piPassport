@@ -174,4 +174,14 @@ class NFC:
 			headers={'content-type':'application/json'}
 			req=requests.post(os.path.join(self.people_api),data=json.dumps(values),headers=headers)
 			print requests.get(self.people_api).json()
+			for a in p['achievements']:
+				val2={'UID':id,'AID':a}
+				try:
+					i=requests.get(self.link_api).json()
+					id=int(i[-1]["ID"])+1
+				except:
+					id=1
+				val2['ID']=id
+				req2=requests.post(self.link_api,data=json.dumps(val2),headers=headers)
+				print requests.get(self.link_api).json()
 		
