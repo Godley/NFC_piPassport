@@ -4,11 +4,14 @@ from xml.dom import minidom
 import urllib
 import urllib2
 import os
+import requests
+import json
 
 class NFC:
 	def __init__(self,data_file,pi_file):
 		self.ach_api='http://pipassport.azurewebsites.net/api/Achievements'
 		self.people_api='http://pipassport.azurewebsites.net/api/People'
+		self.link_api='http://pipassport.azurewebistes.net/api/Links'
 		self.data=data_file
 		self.pi=pi_file
 		self.people=self.LoadPeople()
@@ -72,20 +75,38 @@ class NFC:
 						ans.appendChild(txt)
 						a.appendChild(ans)
 					pitag.appendChild(a)
+				data={'ID':id,'Description':a['description']}
+				header={'content-type':'application/json'}
+				req=requests.post(self.achievements_api,json.dump(data),header}
 		file=open(self.pi,'w')
 		dom.writexml(file)
-	def AddAchievement(self,id,question,answers):
-		if id not in self.achievements.keys():
-			self.achievements[id]={"question":question,"answers":answers}
-			self.SavePi()
-		else:
-			print "ERROR! achievement ID already in DB"
+	def AddAchievement(self,question,answers,description):
+		req=requests.get(self.achievements_api)
+		try:
+			ach=req.json()
+			id=len(ach)-1
+			
+		except:
+			id=0
+		self.achievements[id]={"question":question,"answers":answers,"description":description}
+		self.SavePi()
 	def LoadPeople(self):
-		req=urllib2.Request(url)
-		people_array=urllib2.urlopen(req).read()
-		for p in people_array:
-			self.people[p['ID']]={'name':p['name'],'achievements':p['achievements']}
-		req2=url		return people
+		req=requests.get(self.people_api)
+		try:
+			people_array=req.json()
+			people = {}
+			for p in people_array:
+				people[p['ID']]={'name':p['Name'],'achievements':[]}
+		except:
+			people={}
+		try:
+			req2=requests.get(self.link_api)
+			link_array=req2.json()
+			for l in link_array:
+				people[l['UID']]['achievements'].append(l['AID'])
+		except:
+			return people
+		return people
 			
 	
 	def Read(self):
@@ -122,20 +143,9 @@ class NFC:
 		self.WritePeople()
 		return self.people[uid]
 	def WritePeople(self):
-		dom=self.Load(self.data,"people")
-		top=dom.documentElement
 		for id,p in self.people.iteritems():
-			el=dom.createElement("person")
-			el.setAttribute("ID",id)
-			name=dom.createElement("name")
-			name_txt=dom.createTextNode(p["name"])
-			name.appendChild(name_txt)
-			el.appendChild(name)
-			for a in p["achievements"]:
-				a_tag=dom.createElement("achievement")
-				a_txt=dom.createTextNode(a)
-				a_tag.appendChild(a_txt)
-				el.appendChild(a_tag)
-			top.appendChild(el)
-		file=open(self.data,'w')
-		dom.writexml(file)
+			values={'ID':id,'Name':p['name']}
+			headers={'content-type':'application/json'}
+			req=requests.post(os.path.join(self.people_api),data=json.dumps(values),headers=headers)
+			print requests.get(self.people_api).json()
+		
