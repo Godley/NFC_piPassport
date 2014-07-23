@@ -1,8 +1,8 @@
 from nfc import NFC
 
 class UI(object):
-	def __init__(self,pi,people):
-		self.NFC=NFC(pi,people)
+	def __init__(self,pi,people,piurl,linkurl):
+		self.NFC=NFC(pi,people,piurl,linkurl)
 		self.CRUD={1:self.View,2:self.Create,3:self.Update,4:self.Delete,5:self.Quit}
 	
 	
@@ -28,31 +28,31 @@ class UI(object):
 		input=raw_input('Display all achievements? (y/n)')
 		if input.lower()=='y':
 			entries=self.NFC.achievements
-			for id, a in entries:
+			for id, a in entries.iteritems():
 				print "ID: ", id
-				for id, entry in a:
+				for id, entry in a.iteritems():
 					print id, ": ", entry
 		else:
 			id=self.ProcessEntry('Achievement ID')
 			entry=self.NFC.GetAchievement(id)
 			if entry is None:
 				print "Achievement not found"
-				else:
-					for id, e in entry:
-						print id, " : ", e
+			else:
+				for id, e in entry.iteritems():
+					print id, " : ", e
 
 
 	def Create(self):
-		id=self.ProcessEntry('number of achievements')
+		id=int(self.ProcessEntry('number of achievements'))
 		for i in range(id):
 			desc=raw_input('Achievement description:')
-			question=raw_input('Question:')
+			question=str(raw_input('Question:'))
 			vint=False
-			ansint=self.ProcessEntry('number of answers')
+			ansint=int(self.ProcessEntry('number of answers'))
 			answers=[]
 			for i in range(ansint):
-				answer=raw_input('Enter answer '+i+':')
-				answers.append(answer)
+				answer=raw_input('Enter answer '+str(i)+':')
+				answers.append(str(answer))
 			self.NFC.AddAchievement(desc,question,answers)
 
 	def Update(self):
@@ -105,7 +105,7 @@ class UI(object):
 			valid=self.ValidateInt(id)
 			if not valid:
 				print "Invalid number"
-		return int(id)
+		return id
 
 self=UI('pi.xml','http://pipassport.azurewebsites.net/api/People','http://pipassport.azurewebsites.net/api/Achievements','http://pipassport.azurewebsites.net/api/Links')
 self.Menu()

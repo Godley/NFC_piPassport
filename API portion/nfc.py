@@ -1,12 +1,12 @@
 import nxppy
 import os,json,requests
-
+from xml.dom import minidom
 class NFC(object):
 	def __init__(self,pifile,people_url,pi_url,link_url):
 		self.pi=pifile
 		self.pi_url=pi_url
-		self.people_url=people_url
-		self.link_url=link_url
+		self.people_api=people_url
+		self.link_api=link_url
 
 		self.achievements=self.LoadPi()
 		self.people=self.LoadPeople()
@@ -27,6 +27,7 @@ class NFC(object):
 							self.people[id]['achievements'].append(aid)
 							print "Achievement unlocked!"
 						else:
+							print "Achievement available: answer the following question to win "+self.achievements[aid]["Description"]+":"
 							print self.achievements[aid]['question']
 							ans=[]
 							for a in range(len(self.achievements[aid]['answers'])):
@@ -40,18 +41,16 @@ class NFC(object):
 										found=True
 										break
 								if not found:
-									print "answer" + str(ans) + " incorrect!"
+									print "answer "+ans[an]+" incorrect!"
 								else:
 									correct+=1
 							if correct == len(self.achievements[aid]['answers']):
 								print "achievement unlocked!"	
 								self.people[id]['achievements'].append(aid)
-				self.WritePeople()
-				return self.people[id]
-			else:
-				return None
+			self.SavePeople()
+			return self.people[id]
 
-	def Load(self,type):
+	def Load(self,file,type):
 		if os.path.exists(file):
 			source=open(file)
 			try:
@@ -73,9 +72,29 @@ class NFC(object):
 			self.SavePi()
 			dom=self.Load(self.pi,"piSyst")
 			pi_tag=dom.getElementsByTagName("pi")[0]
+		a_q=requests.get(self.pi_url)
+		a_data=a_q.json()
+		a_dict={}
+		for a in a_data:
+			a_dict[a["ID"]]={"Description":a["Description"]}
+		pid=pi_tag.getAttribute("ID")
 		a_tags=pi_tag.getElementsByTagName("achievement")
 		achievements={}
-		achievements[pi_tag.getAttribute("ID")]={"question":None,"answers":None}
+		if int(pid) in a_dict.keys():
+			achievements[int(pid)]={"question":None,"answers":None,"Description":a_dict[int(pid)]["Description"]}
+		else:
+			desc=raw_input("Please enter a description for this pi:")
+			post=requests.post(self.pi_url,data=json.dumps({"Description":desc}),headers={"Content-type":"application/json"})
+			id=post.json()["ID"]
+			achievements[id]={"question":None,"answers":None,"Description":desc}
+			pi_tag.setAttribute("ID",str(id))
+			file=open(self.pi,'w')
+			dom.writexml(file)
+		a_q=requests.get(self.pi_url)
+		a_data=a_q.json()
+		a_dict={}
+		for a in a_data:
+			a_dict[a["ID"]]={"Description":a["Description"]}
 		for a in a_tags:
 			id=a.getAttribute("ID")
 			qtag=a.getElementsByTagName("question")[0]
@@ -84,15 +103,24 @@ class NFC(object):
 			answers=[]
 			for an in atag:
 				answers.append(an.childNodes[0].data)
-			achievements[id]={"question":question,"answers":answers}
+			achievements[int(id)]={"question":question,"answers":answers,"Description":a_dict[int(id)]["Description"]}
+			
 		return achievements
 
 	def SavePi(self):
+		achievement_q=requests.get(self.pi_url)
+		a_data=achievement_q.json()
+		a_dict={}
+		for entry in a_data:
+			a_dict[entry["ID"]]={"Description":entry["Description"]}
 		dom=self.Load(self.pi,"piSyst")
 		top=dom.documentElement
 		if(len(dom.getElementsByTagName("pi"))==0):
 			pi=dom.createElement("pi")
-			id=0
+			desc=raw_input("If you are an administrator, please enter a description for this pi's location:")
+			data={"Description":desc}
+			post=requests.post(self.pi_url,data=json.dumps(data),headers={"Content-type":"application/json"})
+			id=post.json()["ID"]
 			pi.setAttribute("ID",str(id))
 			top.appendChild(pi)
 		else:
@@ -100,7 +128,7 @@ class NFC(object):
 			for id,a in self.achievements.iteritems():								
 				if a["question"]!=None:
 					ac=dom.createElement("achievement")
-					ac.setAttribute("ID",id)
+					ac.setAttribute("ID",str(id))
 					q=dom.createElement("question")
 					text=dom.createTextNode(str(a["question"]))
 					q.appendChild(text)
@@ -110,26 +138,35 @@ class NFC(object):
 						txt=dom.createTextNode(str(answer))
 						ans.appendChild(txt)
 						ac.appendChild(ans)
+					if id not in a_dict.keys():
+						request=requests.post(self.pi_url,data=json.dumps({"Description":a["Description"]}),headers={"Content-type":"application/json"})
+						new_id=request.json()["ID"]
+						if int(new_id) != id:
+							ac.setAttribute("ID",new_id)
 					pitag.appendChild(ac)
+			for id in a_dict.keys():
+				if id not in self.achievements.keys():
+					r=requests.delete(os.path.join(self.pi_url,id),headers={"Content-type":"application/json"})
 		file=open(self.pi,'w')
 		dom.writexml(file)
 	
 	def LoadPeople(self):
-		get=requests.get(self.people_url)
+		get=requests.get(self.people_api)
 		data=None
 		people={}
 		try:
 			data=get.json()
 			for item in data:
-				people[item["ID"]]={"name":item["name"],"achievements":[]}
+				people[item["ID"]]={"name":item["Name"],"achievements":[]}
 		except:
 			return people
 		try:
-			get=requests.get(self.link_url)
+			get=requests.get(self.link_api)
 			j=get.json()
 			for item in j:
 				if item["UID"] in people.keys():
-					people[item["UID"]]["achievements"].append(item["AID"])
+					if item["AID"] not in people[item["UID"]]:
+						people[item["UID"]]["achievements"].append(item["AID"])
 			return people
 		except:
 			return people
@@ -141,15 +178,15 @@ class NFC(object):
 		ld={}
 		for item in linkdata:
 			if item["UID"] not in ld.keys():
-				ld["UID"]=[]
-				ld["UID"].append(item["AID"])
+				ld[item["UID"]]=[]
+				ld[item["UID"]].append(item["AID"])
 			else:
-				ld["UID"].append(item["AID"])
-		for id,p in self.people:
+				ld[item["UID"]].append(item["AID"])
+		for id,p in self.people.iteritems():
 			request=requests.get(os.path.join(self.people_api,id))
 			try:
 				js=request.json()
-				data={"Name:p["name"]}
+				data={"Name":p["name"]}
 				r=requests.put(os.path.join(self.people_api,id),data=json.dumps(data),headers=h)
 			except:
 				data={"ID":id,"Name":p["name"]}
@@ -159,7 +196,7 @@ class NFC(object):
 					data={"AID":a,"UID":id}
 					pr=requests.post(self.link_api,data=json.dumps(data),headers=h)
 			else:
-				for a in p["achievements"]
+				for a in p["achievements"]:
 					if a not in ld[id]:
 						data={"AID":a,"UID":id}
 						pr=requests.post(self.link_api,data=json.dumps(data),headers=h)
@@ -173,12 +210,14 @@ class NFC(object):
 	def UpdateAchievement(self,updated_entry):
 		if id in self.achievements.keys():
 			self.achievements[id]=updated_entry
+			self.SavePi()
 		else:
 			print "Achievement not found"
-
+		
 	def DeleteAchievement(self,id):
 		if id in self.achievements.keys():
 			del self.achievements[id]
+			self.SavePi()
 		else:
 			print "Achievement not found"
 
