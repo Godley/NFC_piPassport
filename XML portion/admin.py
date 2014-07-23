@@ -4,8 +4,6 @@ class UI(object):
 	def __init__(self,pi,people):
 		self.NFC=NFC(pi,people)
 		self.CRUD={1:self.View,2:self.Create,3:self.Update,4:self.Delete,5:self.Quit}
-	
-	
 
 	def Menu(self):
 		print "Welcome to xyz admin."
@@ -28,18 +26,18 @@ class UI(object):
 		input=raw_input('Display all achievements? (y/n)')
 		if input.lower()=='y':
 			entries=self.NFC.achievements
-			for id, a in entries:
+			for id, a in entries.iteritems():
 				print "ID: ", id
-				for id, entry in a:
+				for id, entry in a.iteritems():
 					print id, ": ", entry
 		else:
 			id=self.ProcessEntry('Achievement ID')
 			entry=self.NFC.GetAchievement(id)
 			if entry is None:
 				print "Achievement not found"
-				else:
-					for id, e in entry:
-						print id, " : ", e
+			else:
+				for id, e in entry.iteritems():
+					print id, " : ", e
 
 
 	def Create(self):
@@ -48,10 +46,10 @@ class UI(object):
 			desc=raw_input('Achievement description:')
 			question=raw_input('Question:')
 			vint=False
-			ansint=self.ProcessEntry('number of answers')
+			ansint=int(self.ProcessEntry('number of answers'))
 			answers=[]
 			for i in range(ansint):
-				answer=raw_input('Enter answer '+i+':')
+				answer=raw_input('Enter answer '+str(i)+':')
 				answers.append(answer)
 			self.NFC.AddAchievement(desc,question,answers)
 
@@ -61,9 +59,16 @@ class UI(object):
 		new_e={}
 		if entry is not None:
 			for id in entry.keys():
-				update=raw_input('Enter update for '+id+': ')
-				new_e[id]=update
-			self.NFC.UpdateAchievement(entry)
+				if id != "answers":
+					update=raw_input('Enter update for '+id+': ')
+					new_e[id]=update
+				else:
+					answers=[]
+					for a in entry["answers"]:
+						u=raw_input('Enter update for answer '+a+': ')
+						answers.append(u)
+					new_e[id]=answers
+			self.NFC.UpdateAchievement(new_e)
 			print "Update successful!"
 		else:
 			print "Update failed"
@@ -105,7 +110,7 @@ class UI(object):
 			valid=self.ValidateInt(id)
 			if not valid:
 				print "Invalid number"
-		return int(id)
+		return id
 
 self=UI('pi.xml','people.xml')
 self.Menu()

@@ -1,5 +1,6 @@
 import nxppy
 import os,json,requests
+from xml.dom import minidom
 
 class NFC(object):
 	def __init__(self,pifile,peoplefile):
@@ -45,12 +46,9 @@ class NFC(object):
 							if correct == len(self.achievements[aid]['answers']):
 								print "achievement unlocked!"	
 								self.people[id]['achievements'].append(aid)
-				self.WritePeople()
-				return self.people[id]
-			else:
-				return None
-
-	def Load(self,type):
+			self.SavePeople()
+			return self.people[id]
+	def Load(self,file,type):
 		if os.path.exists(file):
 			source=open(file)
 			try:
@@ -121,7 +119,7 @@ class NFC(object):
 			id=p.getAttribute("ID")
 			ntag=p.getElementsByTagName("name")[0]
 			name=ntag.childNodes[0].data
-			atag=a.getElementsByTagName("achievements")
+			atag=p.getElementsByTagName("achievements")
 			achievements=[]
 			for a in atag:
 				achievements.append(a.childNodes[0].data)
@@ -149,7 +147,7 @@ class NFC(object):
 
 
 	def AddAchievement(self,desc,question,answers):
-		id=self.achievements.keys()[-1]+1
+		id=str(int(self.achievements.keys()[-1])+1)
 		self.achievements[id]={"question":question,"answers":answers,"Description":desc}
 		self.SavePi()
 	
