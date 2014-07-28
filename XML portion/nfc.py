@@ -40,7 +40,7 @@ class NFC(object):
 										found=True
 										break
 								if not found:
-									print "answer" + str(ans) + " incorrect!"
+									print "answer " + str(ans[an]) + " incorrect!"
 								else:
 									correct+=1
 							if correct == len(self.achievements[aid]['answers']):
@@ -119,16 +119,18 @@ class NFC(object):
 			id=p.getAttribute("ID")
 			ntag=p.getElementsByTagName("name")[0]
 			name=ntag.childNodes[0].data
-			atag=p.getElementsByTagName("achievements")
+			atag=p.getElementsByTagName("achievement")
 			achievements=[]
 			for a in atag:
-				achievements.append(a.childNodes[0].data)
+				if a.childNodes[0].data not in achievements:
+					achievements.append(a.childNodes[0].data)
 			people[id]={"name":name,"achievements":achievements}
 		return people
 
 	def SavePeople(self):
 		dom=self.Load(self.peoplef,"People")
 		top=dom.documentElement
+		old_p=self.LoadPeople()
 		people_tags=top.getElementsByTagName("person")
 		for id,p in self.people.iteritems():
 			if id in old_p.keys():
