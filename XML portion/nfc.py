@@ -87,6 +87,7 @@ class NFC(object):
 	def SavePi(self):
 		dom=self.Load(self.pi,"piSyst")
 		top=dom.documentElement
+		old_achievements=self.LoadPi()
 		if(len(dom.getElementsByTagName("pi"))==0):
 			pi=dom.createElement("pi")
 			id=0
@@ -94,19 +95,29 @@ class NFC(object):
 			top.appendChild(pi)
 		else:
 			pitag=dom.getElementsByTagName("pi")[0]
-			for id,a in self.achievements.iteritems():								
-				if a["question"]!=None:
-					ac=dom.createElement("achievement")
-					ac.setAttribute("ID",id)
-					q=dom.createElement("question")
-					text=dom.createTextNode(str(a["question"]))
-					q.appendChild(text)
-					ac.appendChild(q)
-					for answer in a["answers"]:
-						ans=dom.createElement("answer")
-						txt=dom.createTextNode(str(answer))
-						ans.appendChild(txt)
-						ac.appendChild(ans)
+			if old_achievements != self.achievements:
+				try:
+					os.remove(self.pifile)
+				except:
+					pass
+				dom=self.Load(self.pi,"piSyst")
+				pitag=dom.createElement("pi")
+				id=0
+				pitag.setAttribute("ID",str(id))
+				top.appendChild(pitag)
+				for id,a in self.achievements.iteritems():
+					if a["question"]!=None:
+						ac=dom.createElement("achievement")
+						ac.setAttribute("ID",id)
+						q=dom.createElement("question")
+						text=dom.createTextNode(str(a["question"]))
+						q.appendChild(text)
+						ac.appendChild(q)
+						for answer in a["answers"]:
+							ans=dom.createElement("answer")
+							txt=dom.createTextNode(str(answer))
+							ans.appendChild(txt)
+							ac.appendChild(ans)
 					pitag.appendChild(ac)
 		file=open(self.pi,'w')
 		dom.writexml(file)
@@ -119,7 +130,7 @@ class NFC(object):
 			id=p.getAttribute("ID")
 			ntag=p.getElementsByTagName("name")[0]
 			name=ntag.childNodes[0].data
-			atag=p.getElementsByTagName("achievements")
+			atag=p.getElementsByTagName("achievement")
 			achievements=[]
 			for a in atag:
 				achievements.append(a.childNodes[0].data)
