@@ -129,19 +129,30 @@ class NFC(object):
 	def SavePeople(self):
 		dom=self.Load(self.peoplef,"People")
 		top=dom.documentElement
-		for id,p in self.people.iteritems():								
-			peep=dom.createElement("person")
-			peep.setAttribute("ID",id)
-			n=dom.createElement("name")
-			text=dom.createTextNode(str(p["name"]))
-			n.appendChild(text)
-			peep.appendChild(n)
-			for achievement in p["achievements"]:
-				ac=dom.createElement("achievement")
-				txt=dom.createTextNode(str(achievement))
-				ac.appendChild(txt)
-				peep.appendChild(ac)
-			top.appendChild(peep)
+		people_tags=top.getElementsByTagName("person")
+		for id,p in self.people.iteritems():
+			if id in old_p.keys():
+					for pe in people_tags:
+						if pe.getAttribute("ID")==id:
+							for achievement in p["achievements"]:
+								if achievement not in old_p[id]["achievements"]:
+									ac_tag=dom.createElement("achievement")
+									ac_text=dom.createTextNode(achievement)
+									ac_tag.appendChild(ac_text)
+									pe.appendChild(ac_tag)
+			else:
+				peep=dom.createElement("person")
+				peep.setAttribute("ID",id)
+				n=dom.createElement("name")
+				text=dom.createTextNode(str(p["name"]))
+				n.appendChild(text)
+				peep.appendChild(n)
+				for achievement in p["achievements"]:
+					ac=dom.createElement("achievement")
+					txt=dom.createTextNode(str(achievement))
+					ac.appendChild(txt)
+					peep.appendChild(ac)
+				top.appendChild(peep)
 		file=open(self.peoplef,'w')
 		dom.writexml(file)
 
