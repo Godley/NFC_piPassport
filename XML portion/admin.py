@@ -41,8 +41,8 @@ class UI(object):
 
 
 	def Create(self):
-		id=self.ProcessEntry('number of achievements')
-		for i in range(id):
+		num=int(self.ProcessEntry('number of achievements'))
+		for i in range(num):
 			desc=raw_input('Achievement description:')
 			question=raw_input('Question:')
 			vint=False
@@ -76,8 +76,8 @@ class UI(object):
 	def Delete(self):
 		id=self.ProcessEntry('Achievement ID')
 		entry=self.NFC.GetAchievement(id)
-		for id, e in entry.iteritems():
-			print id, ":", e
+		for key, e in entry.iteritems():
+			print key, ":", e
 		yn=raw_input('Confirm delete? (y/n)')
 		if yn.lower()=='y' or yn.lower()=="yes":
 			self.NFC.DeleteAchievement(id)
