@@ -87,20 +87,24 @@ class NFC(object):
 	def SavePi(self):
 		dom=self.Load(self.pi,"piSyst")
 		top=dom.documentElement
-		old_achievements=self.LoadPi()
 		if(len(dom.getElementsByTagName("pi"))==0):
 			pi=dom.createElement("pi")
 			id=0
 			pi.setAttribute("ID",str(id))
 			top.appendChild(pi)
+			file=open(self.pi,'w')
+			dom.writexml(file)
 		else:
+			old_achievements=self.LoadPi()
 			pitag=dom.getElementsByTagName("pi")[0]
 			if old_achievements != self.achievements:
 				try:
-					os.remove(self.pifile)
-				except:
+					os.remove(self.pi)
+				except Exception, e:
+					print str(e)
 					pass
 				dom=self.Load(self.pi,"piSyst")
+				top=dom.documentElement
 				pitag=dom.createElement("pi")
 				id=0
 				pitag.setAttribute("ID",str(id))
@@ -119,8 +123,8 @@ class NFC(object):
 							ans.appendChild(txt)
 							ac.appendChild(ans)
 					pitag.appendChild(ac)
-		file=open(self.pi,'w')
-		dom.writexml(file)
+				file=open(self.pi,'w')
+				dom.writexml(file)
 	
 	def LoadPeople(self):
 		dom=self.Load(self.peoplef,"People")
@@ -171,8 +175,12 @@ class NFC(object):
 
 
 	def AddAchievement(self,desc,question,answers):
-		id=str(int(self.achievements.keys()[-1])+1)
-		self.achievements[id]={"question":question,"answers":answers,"Description":desc}
+		id=0
+		for ids in self.achievements.keys():
+			if int(ids)>=id:
+				id=int(ids)+1
+		print id
+		self.achievements[str(id)]={"question":question,"answers":answers,"Description":desc}
 		self.SavePi()
 	
 	def UpdateAchievement(self,updated_entry):
