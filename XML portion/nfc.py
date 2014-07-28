@@ -175,11 +175,9 @@ class NFC(object):
 
 
 	def AddAchievement(self,desc,question,answers):
-		id=0
-		for ids in self.achievements.keys():
-			if int(ids)>=id:
-				id=int(ids)+1
-		print id
+		ids=[int(i) for i in self.achievements.keys()]
+		sorted_ids=sorted(ids)
+		id=sorted_ids[-1]+1
 		self.achievements[str(id)]={"question":question,"answers":answers,"Description":desc}
 		self.SavePi()
 	
