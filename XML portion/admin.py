@@ -60,6 +60,7 @@ class UI(object):
 		if entry is not None:
 			for id in entry.keys():
 				if id != "answers":
+					print "previous ", id, ":", entry[id]
 					update=raw_input('Enter update for '+id+': ')
 					new_e[id]=update
 				else:
