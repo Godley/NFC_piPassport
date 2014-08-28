@@ -173,8 +173,7 @@ class NFC(object):
 			j=get.json()
 			for item in j:
 				if item["UID"] in people.keys():
-					if item["AID"] not in people[item["UID"]]:
-						print item["AID"]
+					if item["AID"] not in people[item["UID"]]['achievements']:
 						people[item["UID"]]["achievements"].append(item["AID"])
 			return people
 		except:

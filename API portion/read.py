@@ -7,7 +7,7 @@ if person != None:
 	print "you have collected ",len(person["achievements"])," achievements"	
 	for a in person["achievements"]:
 		print "ID: ", a
-		achievement=self.GetAchievement(a)
+		achievement=self.GetAchievement(str(a))
 		if achievement is not None:
 			if "Description" in achievement.keys():
 				print "Description: ", achievement['Description']
