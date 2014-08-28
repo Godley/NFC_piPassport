@@ -22,7 +22,7 @@ class NFC(object):
 				self.people[id]={"name":name,"achievements":[]}
 			else:
 				for aid in self.achievements.keys():
-					if aid not in self.people[id]['achievements']:
+					if int(aid) not in self.people[id]['achievements']:
 						if self.achievements[aid]['question']==None:
 							self.people[id]['achievements'].append(aid)
 							print "Achievement unlocked!"
@@ -72,21 +72,19 @@ class NFC(object):
 			self.SavePi()
 			dom=self.Load(self.pi,"piSyst")
 			pi_tag=dom.getElementsByTagName("pi")[0]
+			
 		a_q=requests.get(self.pi_url)
 		a_data=a_q.json()
 		a_dict={}
-		print a_data
 		for a in a_data:
-			print a_data
 			a_dict[a["ID"]]={"Description":a["Description"]}
 		pid=pi_tag.getAttribute("ID")
-		print pid
 		a_tags=pi_tag.getElementsByTagName("achievement")
 		achievements={}
 		if int(pid) in a_dict.keys():
 			achievements[pid]={"question":None,"answers":None,"Description":a_dict[int(pid)]["Description"]}
 		else:
-			desc=raw_input("1Please enter a description for this pi:")
+			desc=raw_input("Please enter a description for this pi:")
 			post=requests.post(self.pi_url,data=json.dumps({"Description":desc}),headers={"Content-type":"application/json"})
 			id=str(int(post.json()["ID"])-1)
 			
@@ -124,10 +122,14 @@ class NFC(object):
 			tag=dom.createElement("pi")
 			keys=[int(item) for item in a_dict.keys()]
 			if len(keys)!=0:
+				print "hey1"
 				tag.setAttribute("ID",str(max(keys)+1))
 			else:
+				print "hey"
 				tag.setAttribute("ID",str(0))
 			request=requests.post(self.pi_url,data=json.dumps({"Description":st}),headers={"Content-type":"application/json"})
+			id=request.json()['ID']
+			tag.setAttribute("ID",str(int(id)))
 			top.appendChild(tag)
 		else:
 			pitag=dom.getElementsByTagName("pi")[0]
@@ -172,6 +174,7 @@ class NFC(object):
 			for item in j:
 				if item["UID"] in people.keys():
 					if item["AID"] not in people[item["UID"]]:
+						print item["AID"]
 						people[item["UID"]]["achievements"].append(item["AID"])
 			return people
 		except:
@@ -182,7 +185,6 @@ class NFC(object):
 		link=requests.get(self.link_api)
 		linkdata=link.json()
 		ld={}
-		print linkdata
 		for item in linkdata:
 			if item["UID"] not in ld.keys():
 				ld[item["UID"]]=[]
