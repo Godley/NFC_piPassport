@@ -75,17 +75,21 @@ class NFC(object):
 		a_q=requests.get(self.pi_url)
 		a_data=a_q.json()
 		a_dict={}
+		print a_data
 		for a in a_data:
+			print a_data
 			a_dict[a["ID"]]={"Description":a["Description"]}
 		pid=pi_tag.getAttribute("ID")
+		print pid
 		a_tags=pi_tag.getElementsByTagName("achievement")
 		achievements={}
 		if int(pid) in a_dict.keys():
-			achievements[int(pid)]={"question":None,"answers":None,"Description":a_dict[int(pid)]["Description"]}
+			achievements[pid]={"question":None,"answers":None,"Description":a_dict[int(pid)]["Description"]}
 		else:
-			desc=raw_input("Please enter a description for this pi:")
+			desc=raw_input("1Please enter a description for this pi:")
 			post=requests.post(self.pi_url,data=json.dumps({"Description":desc}),headers={"Content-type":"application/json"})
-			id=post.json()["ID"]
+			id=str(int(post.json()["ID"])-1)
+			
 			achievements[id]={"question":None,"answers":None,"Description":desc}
 			pi_tag.setAttribute("ID",str(id))
 			file=open(self.pi,'w')
@@ -103,7 +107,7 @@ class NFC(object):
 			answers=[]
 			for an in atag:
 				answers.append(an.childNodes[0].data)
-			achievements[int(id)]={"question":question,"answers":answers,"Description":a_dict[int(id)]["Description"]}
+			achievements[id]={"question":question,"answers":answers,"Description":a_dict[id]["Description"]}
 			
 		return achievements
 
@@ -116,13 +120,15 @@ class NFC(object):
 		dom=self.Load(self.pi,"piSyst")
 		top=dom.documentElement
 		if(len(dom.getElementsByTagName("pi"))==0):
-			pi=dom.createElement("pi")
-			desc=raw_input("If you are an administrator, please enter a description for this pi's location:")
-			data={"Description":desc}
-			post=requests.post(self.pi_url,data=json.dumps(data),headers={"Content-type":"application/json"})
-			id=post.json()["ID"]
-			pi.setAttribute("ID",str(id))
-			top.appendChild(pi)
+			st=raw_input('Please enter a description for this pi:')
+			tag=dom.createElement("pi")
+			keys=[int(item) for item in a_dict.keys()]
+			if len(keys)!=0:
+				tag.setAttribute("ID",str(max(keys)+1))
+			else:
+				tag.setAttribute("ID",str(0))
+			request=requests.post(self.pi_url,data=json.dumps({"Description":st}),headers={"Content-type":"application/json"})
+			top.appendChild(tag)
 		else:
 			pitag=dom.getElementsByTagName("pi")[0]
 			for id,a in self.achievements.iteritems():								
@@ -176,6 +182,7 @@ class NFC(object):
 		link=requests.get(self.link_api)
 		linkdata=link.json()
 		ld={}
+		print linkdata
 		for item in linkdata:
 			if item["UID"] not in ld.keys():
 				ld[item["UID"]]=[]

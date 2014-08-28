@@ -1,6 +1,6 @@
 from nfc import NFC
 
-self=NFC('pi.xml','http://pipassport.azurewebsites.net/api/People','http://pipassport.azurewebsites.net/api/Achievements','http://pipassport.azurewebsites.net/api/Links')
+self=NFC('pi.xml','http://pi-passport.azurewebsites.net/api/People','http://pi-passport.azurewebsites.net/api/Achievements','http://pi-passport.azurewebsites.net/api/Joins')
 person=self.ReadCard()
 if person != None:
 	print "Hello " + person["name"]

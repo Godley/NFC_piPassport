@@ -107,5 +107,5 @@ class UI(object):
 				print "Invalid number"
 		return id
 
-self=UI('pi.xml','http://pipassport.azurewebsites.net/api/People','http://pipassport.azurewebsites.net/api/Achievements','http://pipassport.azurewebsites.net/api/Links')
+self=UI('pi.xml','http://pi-passport.azurewebsites.net/api/People','http://pi-passport.azurewebsites.net/api/Achievements','http://pi-passport.azurewebsites.net/api/Links')
 self.Menu()
